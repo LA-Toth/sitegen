@@ -1,0 +1,13 @@
+*.rej
+*.orig
+
+*.bak
+
+*~
+*.swp
+*.swo
+\#*
+
+__pycache__
+
+/.idea
