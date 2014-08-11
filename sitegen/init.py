@@ -14,17 +14,14 @@ include {rootdir}/etc/Makefile
 
 
 class Init(Command):
-    def __init__(self):
-        super().__init__()
+    def _get_command_help(self) -> str:
+        return 'Initialize an empty Site'
 
-    def register(self, parsers):
-        desc = 'Initialize an empty Site'
-        parser = parsers.add_parser('init', help=desc, description=desc)
+    def _register_arguments(self, parser):
         parser.add_argument('-d', '--directory', nargs=1, type=str, required=True,
                             help='Base directory of the new site')
-        parser.set_defaults(_cmd=self)
 
-    def perform(self, ns: Namespace):
+    def perform(self, ns: Namespace) -> int:
         directory = ns.directory[0]
         print("Initializing Site in '{}'".format(directory))
 
@@ -37,6 +34,6 @@ class Init(Command):
                 os.makedirs(directory, mode=0o755)
             self.__generate_makefile(makefile)
 
-    def __generate_makefile(self, makefile_path: str):
+    def __generate_makefile(self, makefile_path: str) -> None:
         with open(makefile_path, 'wt') as f:
             f.write(makefile_template.format(rootdir=root_dir))

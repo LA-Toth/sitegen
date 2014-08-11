@@ -14,8 +14,7 @@ class App:
 
         subparsers = parser.add_subparsers(dest='_subcmd', title='Commands')
 
-        init = Init()
-        init.register(subparsers)
+        Init.create(subparsers)
 
         return parser
 
