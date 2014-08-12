@@ -8,6 +8,8 @@ makefile_template = """
 # Do not modify - use 'Makefile.local.mk' instead
 # which can contain any custom target
 
+SITEGEN_ROOT={rootdir}
+
 include {rootdir}/etc/Makefile
 -include Makefile.local.mk
 """

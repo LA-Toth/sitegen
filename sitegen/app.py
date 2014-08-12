@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 import sys
 from .init import Init
+from .generate import Generate
 
 
 class App:
@@ -15,6 +16,7 @@ class App:
         subparsers = parser.add_subparsers(dest='_subcmd', title='Commands')
 
         Init.create(subparsers)
+        Generate.create(subparsers)
 
         return parser
 
