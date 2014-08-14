@@ -27,14 +27,12 @@ class Generate(Command):
         if not output_file.startswith(root + os.sep):
             raise Exception("Output file name must be prefixed by the root directory")
 
-        root_dir = self.__get_root_dir(output_file, root)
-
         print("Generating page '{}'".format(output_file))
 
         with open(input_file, 'rt') as f:
             input_text = f.read()
 
-        self.__render(os.path.join(template_dir, 'default.tpl'), output_file, input_text, root_dir)
+        self.__render(os.path.join(template_dir, 'default.tpl'), output_file, input_text, root)
         return 0
 
     def __get_root_dir(self, output_file, root):
@@ -43,10 +41,10 @@ class Generate(Command):
         root_dir = os.curdir if count == 0 else os.pardir + (os.sep + os.pardir) * (count - 1)
         return root_dir
 
-    def __render(self, template_path: str, output_file: str, content: str, root_dir: str) -> None:
+    def __render(self, template_path: str, output_file: str, content: str, root: str) -> None:
         mapping = {
             'content': content,
-            'root_dir': root_dir
+            'root_dir':  self.__get_root_dir(output_file, root)
         }
 
         file = File(template_path, mapping, output_file)
