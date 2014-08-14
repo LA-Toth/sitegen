@@ -23,8 +23,8 @@ class Init(Command):
         parser.add_argument('-d', '--directory', nargs=1, type=str, required=True,
                             help='Base directory of the new site')
 
-    def perform(self, ns: Namespace) -> int:
-        directory = ns.directory[0]
+    def _perform(self) -> int:
+        directory = self._ns.directory[0]
         print("Initializing Site in '{}'".format(directory))
 
         makefile = os.path.join(directory, 'Makefile')

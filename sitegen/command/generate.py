@@ -18,11 +18,10 @@ class Generate(Command):
         parser.add_argument('-t', '--template-dir', nargs=1, type=str, default='templates/current/',
                             help='Template directory')
 
-    def perform(self, ns: Namespace) -> int:
-        input_file = ns.input[0]
-        output_file = ns.output[0]
-        template_dir = ns.template_dir[0]
-        root = ns.root[0].rstrip(os.sep)
+    def _perform(self) -> int:
+        input_file = self._ns.input[0]
+        output_file = self._ns.output[0]
+        root = self._ns.root[0].rstrip(os.sep)
 
         if not output_file.startswith(root + os.sep):
             raise Exception("Output file name must be prefixed by the root directory")
@@ -32,20 +31,24 @@ class Generate(Command):
         with open(input_file, 'rt') as f:
             input_text = f.read()
 
-        self.__render(os.path.join(template_dir, 'default.tpl'), output_file, input_text, root)
+        self.__render(input_text, root)
         return 0
 
-    def __get_root_dir(self, output_file, root):
-        subpath = output_file[len(root):].lstrip(os.sep)
-        count = len(subpath.split(os.sep)) - 1
+    def __get_root_dir(self, output_path, root):
+        sub_path = output_path[len(root):].lstrip(os.sep)
+        count = len(sub_path.split(os.sep)) - 1
         root_dir = os.curdir if count == 0 else os.pardir + (os.sep + os.pardir) * (count - 1)
         return root_dir
 
-    def __render(self, template_path: str, output_file: str, content: str, root: str) -> None:
+    def __render(self, content: str, root: str) -> None:
+        output_path = self._ns.output[0]
+        template_dir = self._ns.template_dir[0]
+        template_path = os.path.join(template_dir, 'default.tpl')
+
         mapping = {
             'content': content,
-            'root_dir':  self.__get_root_dir(output_file, root)
+            'root_dir':  self.__get_root_dir(output_path, root)
         }
 
-        file = File(template_path, mapping, output_file)
+        file = File(template_path, mapping, output_path)
         file.update()

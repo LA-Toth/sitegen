@@ -2,11 +2,18 @@ from argparse import Namespace
 
 
 class SimpleCommand:
+    def __init__(self):
+        self._ns = Namespace()
+
     def register(self, parsers) -> None:
         pass
 
     def perform(self, ns: Namespace) -> int:
-        return 0
+        self._ns = ns
+        return self._perform()
+
+    def _perform(self):
+        raise NotImplementedError
 
     @classmethod
     def create(cls, parsers):
