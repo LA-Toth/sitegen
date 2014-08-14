@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
 import sys
-from .init import Init
-from .generate import Generate
+
+from .command.init import Init
+from .command.generate import Generate
 
 
 class App:
