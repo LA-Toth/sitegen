@@ -1,6 +1,7 @@
 from argparse import Namespace
 import os
 from .command import Command
+from sitegen.templates import File
 
 
 class Generate(Command):
@@ -33,13 +34,8 @@ class Generate(Command):
         with open(input_file, 'rt') as f:
             input_text = f.read()
 
-        with open(os.path.join(template_dir, 'index.html'), 'rt') as f:
-            output_text = f.read()
-
-        output_text = self.__process_template(input_text, output_text, root_dir)
-
-        with open(output_file, 'wt') as f:
-            f.write(output_text)
+        self.__render(os.path.join(template_dir, 'default.tpl'), output_file, input_text, root_dir)
+        return 0
 
     def __get_root_dir(self, output_file, root):
         subpath = output_file[len(root):].lstrip(os.sep)
@@ -47,7 +43,11 @@ class Generate(Command):
         root_dir = os.curdir if count == 0 else os.pardir + (os.sep + os.pardir) * (count - 1)
         return root_dir
 
-    def __process_template(self, input_text, output_text, root_dir):
-        output_text = output_text.replace('%%ROOT%%', root_dir)
-        output_text = output_text.replace('%%CONTENT%%', input_text)
-        return output_text
+    def __render(self, template_path: str, output_file: str, content: str, root_dir: str) -> None:
+        mapping = {
+            'content': content,
+            'root_dir': root_dir
+        }
+
+        file = File(template_path, mapping, output_file)
+        file.update()
