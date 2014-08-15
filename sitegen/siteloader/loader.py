@@ -1,4 +1,97 @@
 import os
+import shutil
+import markdown
+from sitegen.templates import File
+
+
+class Action:
+    def __init__(self, path, target_path, **kwargs):
+        self.path = path
+        self.target_path = target_path
+        self.kwargs = kwargs
+
+    def run(self):
+        pass
+
+
+class CopyAction(Action):
+    def run(self):
+        os.makedirs(os.path.dirname(self.target_path))
+        shutil.copyfile(self.path, self.target_path)
+
+
+class MarkdownAction(Action):
+    def run(self):
+        markdown.markdownFromFile(input=self.path, output=self.target_path, output_format='html5')
+
+
+class FinalHtmlAction(Action):
+    def run(self):
+        root = '_install'
+        template_dir = os.path.join('templates', 'current')
+        with open(self.path, 'rt') as f:
+            input_text = f.read()
+        self.__render(template_dir, input_text, root)
+
+    def __get_root_dir(self, root):
+        sub_path = self.target_path[len(root):].lstrip(os.sep)
+        count = len(sub_path.split(os.sep)) - 1
+        root_dir = os.curdir if count == 0 else os.pardir + (os.sep + os.pardir) * (count - 1)
+        return root_dir
+
+    def __render(self, template_dir: str, content: str, root: str) -> None:
+        template_path = os.path.join(template_dir, 'default.tpl')
+
+        mapping = {
+            'content': content,
+            'root_dir':  self.__get_root_dir(root)
+        }
+
+        file = File(template_path, mapping, self.target_path)
+        file.update()
+
+
+
+class DependencyCollector:
+
+    def __init__(self):
+        self.dependencies = dict(__site=list())
+
+    def add_site_dependency(self, path):
+        self.add_dependency('__site__', path)
+
+    def add_dependency(self, key, path):
+        if not key in self.dependencies:
+            self.dependencies[key] = list()
+
+        self.dependencies[key].append(path)
+
+
+class FileSystemObserver:
+    def notify(self, directory, entry):
+        pass
+
+
+class ActionObserver(FileSystemObserver):
+    def __init__(self):
+        self.actions = dict()
+
+
+    def _add_action(self, path, action):
+        self.actions[path] = action
+
+
+class CopyObserver(ActionObserver):
+    def notify(self, directory, entry):
+        full_path = os.path.join(directory, entry)
+        self._add_action(full_path, CopyAction(full_path, full_path, os.path.join('_install', full_path)))
+
+
+class MarkdownObserver(ActionObserver):
+    def notify(self, directory, entry):
+        if entry.endswith('.md'):
+            full_path = os.path.join(directory, entry)
+            self._add_action(full_path, MarkdownAction(full_path, os.path.join('_build', full_path[:-3] + '.middle')))
 
 
 class Loader:
