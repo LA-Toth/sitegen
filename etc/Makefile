@@ -2,6 +2,7 @@ SHELL=/bin/bash
 SED?=$(shell which gsed)
 SED?=$(shell which sed)
 
+SITEGEN := $(SITEGEN_ROOT)/sitegen.py
 .PHONY: help
 help:
 	@echo Help
@@ -13,11 +14,11 @@ _install/.done: _build/.deps
 
 _install/%.html: _build/%.html templates/current/index.html
 	@mkdir -p $(@D)
-	@$(SITEGEN_ROOT)/sitegen.py generate -i $< -o $@ -t templates/current -r _install
+	@$(SITEGEN) generate -i $< -o $@ -t templates/current -r _install
 
 _build/%.html: source/%.md
 	@mkdir -p $(@D)
-	@python -m markdown -o html5 -f $@ $<
+	@$(SITEGEN) preprocess -i $< -o $@
 
 _install/vendors: vendors
 	@mkdir -p $(@D)

@@ -3,6 +3,7 @@ import sys
 
 from .command.init import Init
 from .command.generate import Generate
+from sitegen.command.preprocess import PreProcess
 
 
 class App:
@@ -17,6 +18,7 @@ class App:
         subparsers = parser.add_subparsers(dest='_subcmd', title='Commands')
 
         Init.create(subparsers)
+        PreProcess.create(subparsers)
         Generate.create(subparsers)
 
         return parser
