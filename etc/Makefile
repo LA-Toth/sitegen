@@ -7,6 +7,10 @@ SITEGEN := $(SITEGEN_ROOT)/sitegen.py
 help:
 	@echo Help
 
+.PHONY: deps
+deps:
+	$(SITEGEN) deps -r .
+
 .PHONY: all
 all: _install/.done  _build/.deps
 
