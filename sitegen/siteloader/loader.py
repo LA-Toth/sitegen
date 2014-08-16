@@ -15,7 +15,7 @@ class Action:
     def __init__(self, path: str, target_path: str, site_root: str, **kwargs):
         self.path = path
         self.target_path = target_path
-        self.site_root = site_root
+        self._site_root = site_root
         self.kwargs = kwargs
 
     def __str__(self):
@@ -27,19 +27,30 @@ class Action:
 
 class CopyAction(Action):
     def run(self):
-        os.makedirs(os.path.dirname(self.target_path))
-        shutil.copyfile(self.path, self.target_path)
+        print("Copying", self.path, "to", self.target_path)
+        path = os.path.join(self._site_root, self.path)
+        target_path = os.path.join(self._site_root, self.target_path)
+        if not os.path.exists(os.path.dirname(target_path)):
+            os.makedirs(os.path.dirname(target_path))
+
+        shutil.copyfile(path, target_path)
 
 
 class MarkdownAction(Action):
     def run(self):
-        markdown.markdownFromFile(input=self.path, output=self.target_path, output_format='html5')
+        path = os.path.join(self._site_root, self.path)
+        target_path = os.path.join(self._site_root, self.target_path)
+        if not os.path.exists(os.path.dirname(target_path)):
+            os.makedirs(os.path.dirname(target_path))
+
+        print("Compiling", self.target_path)
+        markdown.markdownFromFile(input=path, output=target_path, output_format='html5')
 
 
 class FinalHtmlAction(Action):
     def run(self):
         root = '_install'
-        template_dir = os.path.join('templates', 'current')
+        template_dir = os.path.join(self._site_root, 'templates', 'current')
         with open(self.path, 'rt') as f:
             input_text = f.read()
         self.__render(template_dir, input_text, root)
@@ -51,6 +62,7 @@ class FinalHtmlAction(Action):
         return root_dir
 
     def __render(self, template_dir: str, content: str, root: str) -> None:
+        print("Generating", self.target_path)
         template_path = os.path.join(template_dir, 'default.tpl')
 
         mapping = {
@@ -58,7 +70,11 @@ class FinalHtmlAction(Action):
             'root_dir':  self.__get_root_dir(root)
         }
 
-        file = File(template_path, mapping, self.target_path)
+        target_path = os.path.join(self._site_root, self.target_path)
+        if not os.path.exists(os.path.dirname(target_path)):
+            os.makedirs(os.path.dirname(target_path))
+
+        file = File(template_path, mapping, target_path)
         file.update()
 
 
@@ -110,8 +126,11 @@ class ActionObserver(FSDependencyObserver):
 
 class CopyObserver(ActionObserver):
     def notify(self, directory: str, entry: str):
-        full_path = os.path.join(directory, entry)
-        self._add_action(full_path, CopyAction(full_path, os.path.join('_install', full_path), self._site_root))
+        path = os.path.join(directory, entry)
+        install_target_path = os.path.join('_install', path)
+        self._add_action(path, CopyAction(path, install_target_path, self._site_root))
+        self._dependency_collector.add_site_dependency(install_target_path)
+        self._dependency_collector.add_dependency(install_target_path, path)
 
 
 class MarkdownObserver(ActionObserver):

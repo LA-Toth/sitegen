@@ -12,6 +12,10 @@ help:
 deps:
 	$(SITEGEN) deps -r .
 
+.PHONY: newmake
+newmake:
+	$(SITEGEN) make -r .
+
 .PHONY: all
 all: _install/.done  _build/.deps
 

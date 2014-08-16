@@ -4,6 +4,7 @@ import sys
 from .command.init import Init
 from .command.generate import Generate
 from sitegen.command.deps import Deps
+from sitegen.command.make import Make
 from sitegen.command.preprocess import PreProcess
 
 
@@ -22,6 +23,7 @@ class App:
         PreProcess.create(subparsers)
         Generate.create(subparsers)
         Deps.create(subparsers)
+        Make.create(subparsers)
 
         return parser
 
