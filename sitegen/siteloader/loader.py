@@ -64,7 +64,7 @@ class FinalHtmlAction(Action):
 
 class DependencyCollector:
     def __init__(self):
-        self._dependencies = dict(__site=list())
+        self._dependencies = dict(__site__=list())
 
     @property
     def dependencies(self) -> dict:
@@ -120,6 +120,14 @@ class MarkdownObserver(ActionObserver):
                              FinalHtmlAction(build_target_path, install_target_path, self._site_root))
 
 
+class ThemeObserver(ActionObserver):
+    def notify(self, directory: str, entry: str):
+        path = os.path.join(directory, entry)
+        sub_path_items = path.split(os.path.sep)[3:]
+        install_target_path = os.sep.join(['_install', 'theme'] + sub_path_items)
+        self._add_action(path, CopyAction(path, install_target_path, self._site_root))
+
+
 class DependencyObserver(FileSystemObserver):
     def __init__(self, dependency_collector: DependencyCollector, observers: Sequence, site_root: str):
         super().__init__(site_root)
@@ -159,139 +167,17 @@ class SiteLoader:
             self.__process_path(full_path, FILE_TYPE_PAGE)
         elif entry == 'posts':
             pass
-        #    self.__process_blog_entries(path)
         elif entry == 'templates':
-            pass
-        #    self.__process_theme_entries(os.path.join(entry, 'current'))
+            self.__process_path(os.path.join(full_path, 'current', 'assets'), FILE_TYPE_THEME)
         elif os.path.isdir(full_path):
             self.__process_path(full_path, FILE_TYPE_ASSET)
 
     def __process_path(self, path: str, observer_type: str):
+        if observer_type not in self._observers:
+            return
+
         for root, dirs, files in os.walk(path):
             directory = root[len(self._site_root):].lstrip(os.sep)
             for entry in files:
                 for observer in self._observers[observer_type]:
                     observer.notify(directory, entry)
-
-
-class Loader:
-    def __init__(self, site_root):
-        self._site_root = site_root
-        self._dependency = dict(__site__=list())
-        self._actions = dict()
-
-    @property
-    def dependencies(self):
-        return dict(self._dependency)
-
-    @property
-    def actions(self):
-        return dict(self._actions)
-
-    def _process_directory_entries(self, directory: str, func: (callable, None)=None, recursive: bool=False):
-        func = func or self._process
-        entries = os.listdir(directory)
-        for entry in entries:
-            if entry.startswith('_') or entry.startswith('.'):
-                continue
-
-            if recursive:
-                full_path = os.path.join(directory, entry)
-                if os.path.isdir(full_path):
-                    self._process_directory_entries(full_path, func, recursive)
-
-            func(directory, entry)
-
-    def _process(self, directory, entry):
-        pass
-
-    def _add_to_deps(self, path, key='__site__'):
-        if not key in self._dependency:
-            self._dependency[key] = list()
-
-        # Remove leading part
-        self._dependency[key].append(path.replace(self._site_root + os.path.sep, ''))
-
-
-    def update(self, directory: (str, None)=None):
-        directory = directory or self._site_root
-        self._update(directory)
-
-    def _update(self, directory):
-        pass
-
-
-class XSiteLoader(Loader):
-    """
-    Loads the dependency graph based on the current state of the file system
-    """
-
-    def _update(self, directory):
-        def process(_, entry):
-            if entry != 'site':
-                self.__process_root_entry(entry)
-
-        self._process_directory_entries(self._site_root, process)
-
-
-
-    def __process_root_entry(self, entry):
-        full_path = os.path.join(self._site_root, entry)
-        print("DEBUG: found root entry:", entry)
-        if entry == 'source' or entry == 'pages':
-            print("DEBUG: -- page")
-            self.__process_pages(full_path)
-        elif entry == 'posts':
-            print("DEBUG: -- post")
-            self.__process_blog_entries(full_path)
-        elif entry == 'templates':
-            self.__process_theme_entries(os.path.join(full_path, 'current'))
-        elif os.path.isdir(full_path):
-            print("DEBUG: -- asset")
-            self.__process_assets(full_path)
-
-    def __process_pages(self, pages_directory):
-        """
-        Files that either HTML snippets or markdown files, the content of the corresponding page
-        """
-
-        def process(directory, entry):
-            full_path = os.path.join(directory, entry)
-            if entry.endswith('.md'):
-                self._add_to_deps(full_path)
-                self._actions[full_path] = ('page', 'markdown')
-            elif entry.endswith('.html'):
-                self._add_to_deps(full_path)
-                self._actions[full_path] = ('page', 'html')
-
-        self._process_directory_entries(pages_directory, process, recursive=True)
-
-    def __process_blog_entries(self, directory):
-        """
-        Files which are markdown files and needs to be collected & transformed
-        """
-        pass
-
-    def __process_assets(self, assets_directory):
-        """
-        Files which will be copied as is
-        """
-        def process(directory, entry):
-            full_path = os.path.join(directory, entry)
-            self._add_to_deps(full_path)
-            self._actions[full_path] = ('copy',)
-
-        self._process_directory_entries(assets_directory, process, recursive=True)
-
-
-    def __process_theme_entries(self, theme_directory):
-        """
-        Files which will be copied as is
-        """
-        def process(directory, entry):
-            full_path = os.path.join(directory, entry)
-
-            self._add_to_deps(full_path.replace(os.path.join('templates', 'current'), 'theme'))
-            self._actions[full_path] = ('copy',)
-
-        self._process_directory_entries(theme_directory, process, recursive=True)

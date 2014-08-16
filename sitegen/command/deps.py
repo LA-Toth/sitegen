@@ -1,6 +1,6 @@
 from sitegen.command.command import Command
 from sitegen.siteloader.loader import SiteLoader, MarkdownObserver, CopyObserver, DependencyObserver, \
-    DependencyCollector, FILE_TYPE_PAGE, FILE_TYPE_ASSET
+    DependencyCollector, FILE_TYPE_PAGE, FILE_TYPE_ASSET, ThemeObserver, FILE_TYPE_THEME
 
 
 class Deps(Command):
@@ -19,9 +19,11 @@ class Deps(Command):
         for d, v in self._dependency_collector.dependencies.items():
             print('  ', d + ':', v)
 
-        print('\nActions')
         actions = self._markdown_observer.actions
         actions.update(self._asset_observer.actions)
+        actions.update(self._theme_observer.actions)
+
+        print('\nActions')
         for a, v in actions.items():
             print('  ', a + ':', v)
 
@@ -31,12 +33,15 @@ class Deps(Command):
         root = self._ns.root[0]
         self._markdown_observer = MarkdownObserver(root)
         self._asset_observer = CopyObserver(root)
+        self._theme_observer = ThemeObserver(root)
         self._dependency_collector = DependencyCollector()
 
         self._page_deps_observer = DependencyObserver(self._dependency_collector, [self._markdown_observer], root)
         self._asset_deps_observer = DependencyObserver(self._dependency_collector, [self._asset_observer], root)
+        self._theme_deps_observer = DependencyObserver(self._dependency_collector, [self._theme_observer], root)
 
         loader = SiteLoader(root)
         loader.register(FILE_TYPE_PAGE, self._page_deps_observer)
         loader.register(FILE_TYPE_ASSET, self._asset_deps_observer)
+        loader.register(FILE_TYPE_THEME, self._theme_deps_observer)
         return loader

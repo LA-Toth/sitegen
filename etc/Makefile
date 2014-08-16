@@ -3,6 +3,7 @@ SED?=$(shell which gsed)
 SED?=$(shell which sed)
 
 SITEGEN := $(SITEGEN_ROOT)/sitegen.py
+
 .PHONY: help
 help:
 	@echo Help
