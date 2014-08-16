@@ -142,7 +142,7 @@ class DependencyObserver(FileSystemObserver):
             observer.notify(directory, entry)
 
 
-class SiteLoader:
+class SiteWalker:
     def __init__(self, site_root):
         self._site_root = site_root
         self._observers = dict()
@@ -181,3 +181,31 @@ class SiteLoader:
             for entry in files:
                 for observer in self._observers[observer_type]:
                     observer.notify(directory, entry)
+
+
+class SiteLoader:
+
+    def __init__(self, root):
+        self.__root = root
+        self.markdown_observer = MarkdownObserver(root)
+        self.asset_observer = CopyObserver(root)
+        self.theme_observer = ThemeObserver(root)
+        self.dependency_collector = DependencyCollector()
+
+        self.page_deps_observer = DependencyObserver(self.dependency_collector, [self.markdown_observer], root)
+        self.asset_deps_observer = DependencyObserver(self.dependency_collector, [self.asset_observer], root)
+        self.theme_deps_observer = DependencyObserver(self.dependency_collector, [self.theme_observer], root)
+
+        self.__site_walker = SiteWalker(root)
+        self.__site_walker.register(FILE_TYPE_PAGE, self.page_deps_observer)
+        self.__site_walker.register(FILE_TYPE_ASSET, self.asset_deps_observer)
+        self.__site_walker.register(FILE_TYPE_THEME, self.theme_deps_observer)
+
+        self.actions = dict()
+
+    def update(self):
+        self.__site_walker.update()
+
+        self.actions.update(self.markdown_observer.actions)
+        self.actions.update(self.asset_observer.actions)
+        self.actions.update(self.theme_observer.actions)
