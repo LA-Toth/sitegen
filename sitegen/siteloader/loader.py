@@ -88,9 +88,16 @@ class FileSystemObserver:
         pass
 
 
-class ActionObserver(FileSystemObserver):
-    def __init__(self, site_root: str):
+class FSDependencyObserver(FileSystemObserver):
+
+    def __init__(self, site_root: str, dependency_collector: DependencyCollector):
         super().__init__(site_root)
+        self._dependency_collector = dependency_collector
+
+
+class ActionObserver(FSDependencyObserver):
+    def __init__(self, site_root: str,  dependency_collector: DependencyCollector):
+        super().__init__(site_root, dependency_collector)
         self._actions = dict()
 
     def _add_action(self, path: str, action: Action):
@@ -119,6 +126,10 @@ class MarkdownObserver(ActionObserver):
             self._add_action(build_target_path,
                              FinalHtmlAction(build_target_path, install_target_path, self._site_root))
 
+            self._dependency_collector.add_site_dependency(install_target_path)
+            self._dependency_collector.add_dependency(install_target_path, build_target_path)
+            self._dependency_collector.add_dependency(build_target_path, path)
+
 
 class ThemeObserver(ActionObserver):
     def notify(self, directory: str, entry: str):
@@ -126,18 +137,17 @@ class ThemeObserver(ActionObserver):
         sub_path_items = path.split(os.path.sep)[3:]
         install_target_path = os.sep.join(['_install', 'theme'] + sub_path_items)
         self._add_action(path, CopyAction(path, install_target_path, self._site_root))
+        self._dependency_collector.add_site_dependency(install_target_path)
+        self._dependency_collector.add_dependency(install_target_path, path)
 
 
-class DependencyObserver(FileSystemObserver):
-    def __init__(self, dependency_collector: DependencyCollector, observers: Sequence, site_root: str):
+class ÜberObserver(FileSystemObserver):
+    def __init__(self, observers: Sequence, site_root: str):
         super().__init__(site_root)
 
-        self.dependency_collector = dependency_collector
         self.observers = observers
 
     def notify(self, directory: str, entry: str):
-        path = os.path.join(directory, entry)
-        self.dependency_collector.add_site_dependency(path)
         for observer in self.observers:
             observer.notify(directory, entry)
 
@@ -176,9 +186,16 @@ class SiteWalker:
         if observer_type not in self._observers:
             return
 
-        for root, dirs, files in os.walk(path):
+        for root, dirs, files in os.walk(path, topdown=True):
+            for directory in dirs:
+                if directory.startswith('.'):
+                    dirs.remove(directory)
+
             directory = root[len(self._site_root):].lstrip(os.sep)
             for entry in files:
+                if entry.startswith('.'):
+                    continue
+
                 for observer in self._observers[observer_type]:
                     observer.notify(directory, entry)
 
@@ -187,14 +204,16 @@ class SiteLoader:
 
     def __init__(self, root):
         self.__root = root
-        self.markdown_observer = MarkdownObserver(root)
-        self.asset_observer = CopyObserver(root)
-        self.theme_observer = ThemeObserver(root)
+
         self.dependency_collector = DependencyCollector()
 
-        self.page_deps_observer = DependencyObserver(self.dependency_collector, [self.markdown_observer], root)
-        self.asset_deps_observer = DependencyObserver(self.dependency_collector, [self.asset_observer], root)
-        self.theme_deps_observer = DependencyObserver(self.dependency_collector, [self.theme_observer], root)
+        self.markdown_observer = MarkdownObserver(root, self.dependency_collector)
+        self.asset_observer = CopyObserver(root, self.dependency_collector)
+        self.theme_observer = ThemeObserver(root, self.dependency_collector)
+
+        self.page_deps_observer = ÜberObserver([self.markdown_observer], root)
+        self.asset_deps_observer = ÜberObserver([self.asset_observer], root)
+        self.theme_deps_observer = ÜberObserver([self.theme_observer], root)
 
         self.__site_walker = SiteWalker(root)
         self.__site_walker.register(FILE_TYPE_PAGE, self.page_deps_observer)
