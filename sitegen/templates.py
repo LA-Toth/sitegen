@@ -4,6 +4,7 @@ import sys
 
 import jinja2
 
+
 VARIABLE_START_STRING = '(('
 VARIABLE_END_STRING = '))'
 

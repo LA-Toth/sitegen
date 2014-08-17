@@ -1,8 +1,11 @@
 from collections.abc import Sequence
 import os
 import shutil
+
 import markdown
+
 from sitegen.templates import File
+
 
 # Site's file types
 FILE_TYPE_PAGE = 'page'
