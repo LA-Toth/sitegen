@@ -9,8 +9,8 @@ VARIABLE_START_STRING = '(('
 VARIABLE_END_STRING = '))'
 
 class TemplateRenderer:
-    def __init__(self):
-        loader = jinja2.FileSystemLoader(sys.path + [os.curdir])
+    def __init__(self, template_root):
+        loader = jinja2.FileSystemLoader(sys.path + [template_root])
         self.__environment = jinja2.Environment(variable_start_string=VARIABLE_START_STRING,
                                                 variable_end_string=VARIABLE_END_STRING,
                                                 loader=loader)
@@ -27,13 +27,15 @@ class File:
             template_file_path: str,
             template_variables: Mapping,
             path: str,
+            *,
+            template_root: (str, None)=None
     ):
         self.__new_contents = None
 
         self.__path = path
         self.__template_file_path = template_file_path
         self.__template_variables = dict(template_variables)
-        self.__template_renderer = TemplateRenderer()
+        self.__template_renderer = TemplateRenderer(template_root or os.curdir)
 
     @property
     def path(self):

@@ -53,8 +53,9 @@ class MarkdownAction(Action):
 class FinalHtmlAction(Action):
     def run(self):
         root = '_install'
-        template_dir = os.path.join(self._site_root, 'templates', 'current')
-        with open(self.path, 'rt') as f:
+        template_dir = os.path.join('templates', 'current')
+        path = os.path.join(self._site_root, self.path)
+        with open(path, 'rt') as f:
             input_text = f.read()
         self.__render(template_dir, input_text, root)
 
@@ -77,7 +78,7 @@ class FinalHtmlAction(Action):
         if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))
 
-        file = File(template_path, mapping, target_path)
+        file = File(template_path, mapping, target_path, template_root=self._site_root)
         file.update()
 
 
