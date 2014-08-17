@@ -2,10 +2,8 @@ from argparse import ArgumentParser
 import sys
 
 from .command.init import Init
-from .command.generate import Generate
 from sitegen.command.deps import Deps
 from sitegen.command.make import Make
-from sitegen.command.preprocess import PreProcess
 
 
 class App:
@@ -15,13 +13,11 @@ class App:
         self.__parse(parser)
 
     def __init_parsers(self):
-        parser = ArgumentParser(description='Site Genenerator')
+        parser = ArgumentParser(description='Site Generator')
 
         subparsers = parser.add_subparsers(dest='_subcmd', title='Commands')
 
         Init.create(subparsers)
-        PreProcess.create(subparsers)
-        Generate.create(subparsers)
         Deps.create(subparsers)
         Make.create(subparsers)
 
