@@ -88,11 +88,5 @@ class SiteLoader:
         self.__site_walker.register(FILE_TYPE_ASSET, self.asset_deps_observer)
         self.__site_walker.register(FILE_TYPE_THEME, self.theme_deps_observer)
 
-        self.actions = dict()
-
     def update(self):
         self.__site_walker.update()
-
-        self.actions.update(self.markdown_observer.actions)
-        self.actions.update(self.asset_observer.actions)
-        self.actions.update(self.theme_observer.actions)

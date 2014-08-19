@@ -15,14 +15,15 @@ class Make(Command):
         loader.update()
 
         dependencies = loader.dependency_collector.dependencies
-        actions = loader.actions
 
-        return self.__generate_site(dependencies, '__site__', actions)
+        return self.__generate_site(dependencies, '__site__')
 
-    def __generate_site(self, dependencies, key, actions):
-        for file in dependencies[key]:
+    def __generate_site(self, dependencies, key):
+        entry = dependencies[key]
+        for file in entry.dependencies:
             if file in dependencies:
-                self.__generate_site(dependencies, file, actions)
+                self.__generate_site(dependencies, file)
 
-            if file in actions:
-                actions[file].run()
+            if not entry.phony:
+                # FIXME: as of now there is no multiple dependencies for a single file
+                entry.action(entry.dependencies[0], entry.name, self._ns.root[0]).run()

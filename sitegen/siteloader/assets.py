@@ -1,7 +1,8 @@
 import os
 import shutil
 
-from sitegen.siteloader.base import Action, ActionObserver
+from sitegen.siteloader.base import FSDependencyObserver
+from sitegen.siteloader.dependency import Action
 
 
 class CopyAction(Action):
@@ -15,10 +16,9 @@ class CopyAction(Action):
         shutil.copyfile(path, target_path)
 
 
-class CopyObserver(ActionObserver):
+class CopyObserver(FSDependencyObserver):
     def notify(self, directory: str, entry: str):
         path = os.path.join(directory, entry)
         install_target_path = os.path.join('_install', path)
-        self._add_action(path, CopyAction(path, install_target_path, self._site_root))
         self._dependency_collector.add_site_dependency(install_target_path)
-        self._dependency_collector.add_dependency(install_target_path, path)
+        self._dependency_collector.add_dependency(install_target_path, path, CopyAction)

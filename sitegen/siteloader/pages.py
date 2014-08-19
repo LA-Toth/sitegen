@@ -2,10 +2,11 @@ import os
 
 import markdown
 
-from sitegen.siteloader.base import ActionObserver, Action, FinalHtmlAction
+from sitegen.siteloader.base import FinalHtmlAction, FSDependencyObserver
+from sitegen.siteloader.dependency import Action
 
 
-class MarkdownObserver(ActionObserver):
+class MarkdownObserver(FSDependencyObserver):
     def notify(self, directory: str, entry: str):
         if entry.endswith('.md'):
             path = os.path.join(directory, entry)
@@ -13,13 +14,9 @@ class MarkdownObserver(ActionObserver):
             build_target_path = os.sep.join(['_build'] + sub_path_items)[:-3] + '.middle'
             install_target_path = os.sep.join(['_install'] + sub_path_items)[:-3] + '.html'
 
-            self._add_action(path, MarkdownAction(path, build_target_path, self._site_root))
-            self._add_action(build_target_path,
-                             FinalHtmlAction(build_target_path, install_target_path, self._site_root))
-
             self._dependency_collector.add_site_dependency(install_target_path)
-            self._dependency_collector.add_dependency(install_target_path, build_target_path)
-            self._dependency_collector.add_dependency(build_target_path, path)
+            self._dependency_collector.add_dependency(install_target_path, build_target_path, MarkdownAction)
+            self._dependency_collector.add_dependency(build_target_path, path, FinalHtmlAction)
 
 
 class MarkdownAction(Action):

@@ -1,20 +1,8 @@
 import os
 
+from sitegen.siteloader.dependency import Dependencies, Action
+
 from sitegen.templates import File
-
-
-class Action:
-    def __init__(self, path: str, target_path: str, site_root: str, **kwargs):
-        self.path = path
-        self.target_path = target_path
-        self._site_root = site_root
-        self.kwargs = kwargs
-
-    def __str__(self):
-        return "{}('{}', '{}')".format(self.__class__.__name__, self.path, self.target_path)
-
-    def run(self):
-        pass
 
 
 class FileSystemObserver:
@@ -27,39 +15,26 @@ class FileSystemObserver:
 
 class DependencyCollector:
     def __init__(self):
-        self._dependencies = dict(__site__=list())
+        self._dependencies = Dependencies()
 
     @property
     def dependencies(self) -> dict:
-        return dict(self._dependencies)
+        return self._dependencies.dependencies
 
     def add_site_dependency(self, path: str):
-        self.add_dependency('__site__', path)
+        self.add_virtual_dependency('__site__', path)
 
-    def add_dependency(self, key: str, path: str) -> None:
-        if not key in self._dependencies:
-            self._dependencies[key] = list()
+    def add_dependency(self, key: str, path: str, action: (Action, None)=None) -> None:
+        self._dependencies.add(key, path, action=action)
 
-        self._dependencies[key].append(path)
+    def add_virtual_dependency(self, key: str, path: str, action: (Action, None)=None):
+        self._dependencies.add(key, path, action=action, phony=True)
 
 
 class FSDependencyObserver(FileSystemObserver):
     def __init__(self, site_root: str, dependency_collector: DependencyCollector):
         super().__init__(site_root)
         self._dependency_collector = dependency_collector
-
-
-class ActionObserver(FSDependencyObserver):
-    def __init__(self, site_root: str,  dependency_collector: DependencyCollector):
-        super().__init__(site_root, dependency_collector)
-        self._actions = dict()
-
-    def _add_action(self, path: str, action: Action):
-        self._actions[path] = action
-
-    @property
-    def actions(self) -> dict:
-        return dict(self._actions)
 
 
 class FinalHtmlAction(Action):
