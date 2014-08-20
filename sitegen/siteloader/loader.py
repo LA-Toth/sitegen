@@ -4,7 +4,7 @@ import os
 from sitegen.siteloader.assets import CopyObserver
 
 from sitegen.siteloader.base import FileSystemObserver, DependencyCollector
-from sitegen.siteloader.constants import FILE_TYPE_PAGE, FILE_TYPE_THEME, FILE_TYPE_ASSET
+from sitegen.siteloader.constants import FileType
 from sitegen.siteloader.pages import MarkdownObserver
 from sitegen.siteloader.theme import ThemeObserver
 
@@ -25,7 +25,7 @@ class SiteWalker:
         self._site_root = site_root
         self._observers = dict()
 
-    def register(self, entry_type: str, observer: FileSystemObserver):
+    def register(self, entry_type: FileType, observer: FileSystemObserver):
         if not entry_type in self._observers:
             self._observers[entry_type] = list()
 
@@ -42,15 +42,15 @@ class SiteWalker:
     def _process_root_entry(self, entry: str):
         full_path = os.path.join(self._site_root, entry)
         if entry == 'source' or entry == 'pages':
-            self.__process_path(full_path, FILE_TYPE_PAGE)
+            self.__process_path(full_path, FileType.page)
         elif entry == 'posts':
             pass
         elif entry == 'templates':
-            self.__process_path(os.path.join(full_path, 'current', 'assets'), FILE_TYPE_THEME)
+            self.__process_path(os.path.join(full_path, 'current', 'assets'), FileType.theme)
         elif os.path.isdir(full_path):
-            self.__process_path(full_path, FILE_TYPE_ASSET)
+            self.__process_path(full_path, FileType.asset)
 
-    def __process_path(self, path: str, observer_type: str):
+    def __process_path(self, path: str, observer_type: FileType):
         if observer_type not in self._observers:
             return
 
@@ -84,9 +84,9 @@ class SiteLoader:
         self.theme_deps_observer = ÜberObserver([self.theme_observer], root)
 
         self.__site_walker = SiteWalker(root)
-        self.__site_walker.register(FILE_TYPE_PAGE, self.page_deps_observer)
-        self.__site_walker.register(FILE_TYPE_ASSET, self.asset_deps_observer)
-        self.__site_walker.register(FILE_TYPE_THEME, self.theme_deps_observer)
+        self.__site_walker.register(FileType.page, self.page_deps_observer)
+        self.__site_walker.register(FileType.asset, self.asset_deps_observer)
+        self.__site_walker.register(FileType.theme, self.theme_deps_observer)
 
     def update(self):
         self.__site_walker.update()
