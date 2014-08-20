@@ -20,8 +20,10 @@ class MarkdownObserver(FSDependencyObserver):
 
 
 class MarkdownAction(Action):
+    max_deps_count = 1
+
     def run(self):
-        path = os.path.join(self._site_root, self.path)
+        path = os.path.join(self._site_root, self.dependencies[0])
         target_path = os.path.join(self._site_root, self.target_path)
         if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))

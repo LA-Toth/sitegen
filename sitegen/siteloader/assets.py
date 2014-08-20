@@ -6,9 +6,13 @@ from sitegen.siteloader.dependency import Action
 
 
 class CopyAction(Action):
+    max_deps_count = 1
+
     def run(self):
-        print("Copying", self.path, "to", self.target_path)
-        path = os.path.join(self._site_root, self.path)
+        path = self.dependencies[0]
+        print("Copying", path, "to", self.target_path)
+
+        path = os.path.join(self._site_root, path)
         target_path = os.path.join(self._site_root, self.target_path)
         if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))

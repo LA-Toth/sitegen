@@ -1,12 +1,33 @@
+from collections.abc import Sequence
+
+
 class Action:
-    def __init__(self, path: str, target_path: str, site_root: str, **kwargs):
-        self.path = path
+    # Maximum number of dependencies in the @dependencies parameter of __init__()
+    # 0 means: at least 1
+    # > 0 means: at least 1, but at most the specified number
+    max_deps_count = 0
+
+    def __init__(self, target_path: str, dependencies: Sequence, site_root: str, **kwargs):
+        self.__check_dependencies(dependencies)
+
         self.target_path = target_path
+        self.dependencies = dependencies
         self._site_root = site_root
         self.kwargs = kwargs
 
+    def __check_dependencies(self, dependencies):
+        if isinstance(dependencies, str):
+            raise Exception('Dependencies cannot be strings')
+        if len(dependencies) < 1:
+            raise Exception('At least one dependency needs to be specified')
+        if self.max_deps_count and len(dependencies) > self.max_deps_count:
+            raise Exception('At most {} dependency can be specified'.format(self.max_deps_count))
+
     def __str__(self):
-        return "{}('{}', '{}')".format(self.__class__.__name__, self.path, self.target_path)
+        return "{}('{}', '{}')".format(self.__class__.__name__, self.target_path, self.__format_deps())
+
+    def __format_deps(self):
+        return "[" + ', '.join(["'{}'".format(d) for d in self.dependencies]) + "]"
 
     def run(self):
         pass

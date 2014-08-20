@@ -38,10 +38,12 @@ class FSDependencyObserver(FileSystemObserver):
 
 
 class FinalHtmlAction(Action):
+    max_deps_count = 1
+
     def run(self):
         root = '_install'
         template_dir = os.path.join('templates', 'current')
-        path = os.path.join(self._site_root, self.path)
+        path = os.path.join(self._site_root, self.dependencies[0])
         with open(path, 'rt') as f:
             input_text = f.read()
         self.__render(template_dir, input_text, root)

@@ -25,5 +25,4 @@ class Make(Command):
                 self.__generate_site(dependencies, file)
 
             if not entry.phony:
-                # FIXME: as of now there is no multiple dependencies for a single file
-                entry.action(entry.dependencies[0], entry.name, self._ns.root[0]).run()
+                entry.action(entry.name, entry.dependencies, self._ns.root[0]).run()
