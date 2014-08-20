@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 import os
+import yaml
 
 from sitegen.siteloader.dependency import Dependencies, Action
 
@@ -21,14 +23,20 @@ class DependencyCollector:
     def dependencies(self) -> dict:
         return self._dependencies.dependencies
 
-    def add_site_dependency(self, path: str):
-        self.add_virtual_dependency('__site__', path)
+    def add_site_dependency(self, dependencies: Sequence):
+        self.add_virtual_dependency('__site__', dependencies)
 
-    def add_dependency(self, key: str, path: str, action: (Action, None)=None) -> None:
-        self._dependencies.add(key, path, action=action)
+    def add_dependency(self, key: str, dependencies: Sequence, action: (Action, None)=None) -> None:
+        if type(dependencies) == str:
+            raise Exception("Dependencies in DependencyCollector cannot be str")
+        for d in dependencies:
+            self._dependencies.add(key, d, action=action)
 
-    def add_virtual_dependency(self, key: str, path: str, action: (Action, None)=None):
-        self._dependencies.add(key, path, action=action, phony=True)
+    def add_virtual_dependency(self, key: str, dependencies: Sequence, action: (Action, None)=None):
+        if type(dependencies) == str:
+            raise Exception("Dependencies in DependencyCollector cannot be str")
+        for d in dependencies:
+            self._dependencies.add(key, d, action=action, phony=True)
 
 
 class FSDependencyObserver(FileSystemObserver):
@@ -38,15 +46,18 @@ class FSDependencyObserver(FileSystemObserver):
 
 
 class FinalHtmlAction(Action):
-    max_deps_count = 1
+    max_deps_count = 2
 
     def run(self):
         root = '_install'
         template_dir = os.path.join('templates', 'current')
         path = os.path.join(self._site_root, self.dependencies[0])
+        yaml_path = os.path.join(self._site_root, self.dependencies[1])
         with open(path, 'rt') as f:
             input_text = f.read()
-        self.__render(template_dir, input_text, root)
+        with open(yaml_path, 'rt') as f:
+            yaml_object = yaml.load(f.read())
+        self.__render(template_dir, input_text, yaml_object, root)
 
     def __get_root_dir(self, root: str) -> str:
         sub_path = self.target_path[len(root):].lstrip(os.sep)
@@ -54,13 +65,14 @@ class FinalHtmlAction(Action):
         root_dir = os.curdir if count == 0 else os.pardir + (os.sep + os.pardir) * (count - 1)
         return root_dir
 
-    def __render(self, template_dir: str, content: str, root: str) -> None:
+    def __render(self, template_dir: str, content: str, yaml_object, root: str) -> None:
         print("Generating", self.target_path)
         template_path = os.path.join(template_dir, 'default.tpl')
 
         mapping = {
             'content': content,
-            'root_dir':  self.__get_root_dir(root)
+            'site': {'root_dir':  self.__get_root_dir(root)},
+            'page': yaml_object
         }
 
         target_path = os.path.join(self._site_root, self.target_path)

@@ -9,6 +9,7 @@ class CopyAction(Action):
     max_deps_count = 1
 
     def run(self):
+        return
         path = self.dependencies[0]
         print("Copying", path, "to", self.target_path)
 
@@ -24,5 +25,5 @@ class CopyObserver(FSDependencyObserver):
     def notify(self, directory: str, entry: str):
         path = os.path.join(directory, entry)
         install_target_path = os.path.join('_install', path)
-        self._dependency_collector.add_site_dependency(install_target_path)
-        self._dependency_collector.add_dependency(install_target_path, path, CopyAction)
+        self._dependency_collector.add_site_dependency([install_target_path])
+        self._dependency_collector.add_dependency(install_target_path, [path], CopyAction)
