@@ -16,12 +16,14 @@ class Action:
         self.kwargs = kwargs
 
     def __check_dependencies(self, dependencies):
+        classname = self.__class__.__name__
         if isinstance(dependencies, str):
-            raise Exception('Dependencies cannot be strings')
+            raise Exception("Dependencies cannot be strings; class='{}'".format(classname))
         if len(dependencies) < 1:
-            raise Exception('At least one dependency needs to be specified')
+            raise Exception("At least one dependency needs to be specified; class='{}'".format(classname))
         if self.max_deps_count and len(dependencies) > self.max_deps_count:
-            raise Exception('At most {} dependency can be specified'.format(self.max_deps_count))
+            raise Exception("At most {} dependency can be specified; classname='{}'".format(self.max_deps_count,
+                                                                                            classname))
 
     def __str__(self):
         return "{}('{}', '{}')".format(self.__class__.__name__, self.target_path, self.__format_deps())
