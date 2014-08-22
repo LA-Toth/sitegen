@@ -9,7 +9,6 @@ class CopyAction(Action):
     max_deps_count = 1
 
     def run(self):
-        return
         path = self.dependencies[0]
         print("Copying", path, "to", self.target_path)
 
