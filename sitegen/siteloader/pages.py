@@ -42,9 +42,7 @@ class MarkdownAction(Action):
         return input_text, yaml_text
 
     def run(self):
-        path = os.path.join(self._site_root, self.dependencies[0])
-        target_path = os.path.join(self._site_root, self.target_path)
-        yaml_target_path = target_path + '.yml'
+        path, target_path, yaml_target_path = self.__get_full_paths()
         if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))
 
@@ -54,8 +52,16 @@ class MarkdownAction(Action):
 
         output_text = markdown.markdown(input_text, output_format='html5')
 
+        self.__write_output_files(output_text, target_path, yaml_target_path, yaml_text)
+
+    def __get_full_paths(self):
+        path = os.path.join(self._site_root, self.dependencies[0])
+        target_path = os.path.join(self._site_root, self.target_path)
+        yaml_target_path = target_path + '.yml'
+        return path, target_path, yaml_target_path
+
+    def __write_output_files(self, output_text, target_path, yaml_target_path, yaml_text):
         with open(target_path, 'wt') as f:
             f.write(output_text)
-
         with open(yaml_target_path, 'wt') as f:
             f.write(yaml_text)
