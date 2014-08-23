@@ -1,8 +1,14 @@
+import os
+import yaml
 from sitegen.command.command import Command
 from sitegen.siteloader.loader import SiteLoader
 
 
 class Make(Command):
+    def __init__(self):
+        super().__init__()
+        self._site_config = dict()
+
     def _get_command_help(self) -> str:
         return 'Make (generate) site'
 
@@ -15,6 +21,11 @@ class Make(Command):
         loader.update()
 
         dependencies = loader.dependency_collector.dependencies
+        site_config_file = os.path.join(self._ns.root[0], '_config.yml')
+
+        if os.path.exists(site_config_file):
+            with open(site_config_file, 'rt') as f:
+                self._site_config.update(yaml.load(f))
 
         return self.__generate_site(dependencies, '__site__')
 
@@ -25,4 +36,4 @@ class Make(Command):
                 self.__generate_site(dependencies, file)
 
             if not entry.phony:
-                entry.action(entry.name, entry.dependencies, self._ns.root[0]).run()
+                entry.action(entry.name, entry.dependencies, self._ns.root[0], self._site_config).run()

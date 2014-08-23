@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 
 
 class Action:
@@ -7,12 +7,13 @@ class Action:
     # > 0 means: at least 1, but at most the specified number
     max_deps_count = 0
 
-    def __init__(self, target_path: str, dependencies: Sequence, site_root: str, **kwargs):
+    def __init__(self, target_path: str, dependencies: Sequence, site_root: str, site_config: Mapping, **kwargs):
         self.__check_dependencies(dependencies)
 
         self.target_path = target_path
         self.dependencies = dependencies
         self._site_root = site_root
+        self._site_config = site_config
         self.kwargs = kwargs
 
     def __check_dependencies(self, dependencies):

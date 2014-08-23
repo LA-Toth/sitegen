@@ -69,9 +69,12 @@ class FinalHtmlAction(Action):
         print("Generating", self.target_path)
         template_path = os.path.join(template_dir, 'default.tpl')
 
+        site_config = dict(self._site_config)
+        site_config['root_dir'] = self.__get_root_dir(root)
+
         mapping = {
             'content': content,
-            'site': {'root_dir':  self.__get_root_dir(root)},
+            'site': site_config,
             'page': yaml_object
         }
 
